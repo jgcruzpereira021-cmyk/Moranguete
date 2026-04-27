@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moranguete Cute ❤</title>
+    <style>
+        :root {
+            --morango: #ff6b81;
+            --chocolate: #4a2511;
+            --fundo: #fff0f3;
+            --branco: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--fundo);
+            color: var(--chocolate);
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: var(--morango);
+            color: var(--branco);
+            padding: 15px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .user-pill {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn {
+            background-color: var(--chocolate);
+            color: var(--branco);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover { transform: scale(1.05); }
+
+        .container { max-width: 800px; margin: 30px auto; padding: 0 20px; }
+
+        /* Painel do Criador */
+        #creator-panel {
+            background: var(--branco);
+            padding: 25px;
+            border-radius: 20px;
+            border: 3px dashed var(--morango);
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-sizing: border-box;
+        }
+
+        /* Estilo dos Cards de Postagem */
+        .post-card {
+            background: var(--branco);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            text-align: left;
+        }
+
+        .post-card img {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+
+        .post-card h3 { color: var(--morango); margin-top: 0; }
+
+        .download-btn {
+            display: inline-block;
+            background: var(--morango);
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <img src="https://via.placeholder.com/40/fff/ff6b81?text=M" style="border-radius: 50%;">
+        <h2 style="margin:0">Moranguete Cute ❤</h2>
+    </div>
+    <div id="auth-area">
+        <button class="btn" id="login-btn">Entrar com Google</button>
+    </div>
+</header>
+
+<div class="container">
+    <div id="creator-panel">
+        <h3 style="margin-top:0">📢 Nova Publicação (Modo Criador)</h3>
+        <input type="text" id="title" placeholder="Título do Anúncio">
+        <textarea id="desc" rows="3" placeholder="Descrição fofa..."></textarea>
+        <input type="text" id="imgUrl" placeholder="Link da Imagem (URL)">
+        <input type="text" id="downloadUrl" placeholder="Link de Download">
+        <button class="btn" style="background: var(--morango); width: 100%;" id="publish-btn">Publicar no Site 🍓</button>
+    </div>
+
+    <div id="feed">
+        <p style="text-align:center">Carregando as delícias...</p>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // Suas credenciais oficiais
+    const firebaseConfig = {
+        apiKey: "AIzaSyCiadVuc9aZlM2o01ryIhRZ5mer-7H9rI0",
+        authDomain: "moranguete-cute.firebaseapp.com",
+        projectId: "moranguete-cute",
+        storageBucket: "moranguete-cute.firebasestorage.app",
+        messagingSenderId: "75313070721",
+        appId: "1:75313070721:web:3f9dc48d867993129e8380",
+        measurementId: "G-EM6335X4WT"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const provider = new GoogleAuthProvider();
+
+    const CRIADOR = "jg.cruzpereira021@gmail.com";
+    const ADMINS = ["lucasvaras287@gmail.com", "moranguetecute@gmail.com"];
+
+    // --- LÓGICA DE LOGIN ---
+    const authArea = document.getElementById('auth-area');
+    const loginBtn = document.getElementById('login-btn');
+    const creatorPanel = document.getElementById('creator-panel');
+
+    loginBtn.onclick = () => signInWithPopup(auth, provider);
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            authArea.innerHTML = `
+                <div class="user-pill">
+                    <span>Olá, ${user.displayName.split(' ')[0]}</span>
+                    <button class="btn" style="padding: 5px 10px; font-size: 12px" id="logout-btn">Sair</button>
+                </div>`;
+            document.getElementById('logout-btn').onclick = () => signOut(auth);
+
+            // Verifica se é o criador
+            if (user.email === CRIADOR) {
+                creatorPanel.style.display = "block";
+            }
+        } else {
+            authArea.innerHTML = `<button class="btn" id="login-btn">Entrar com Google</button>`;
+            document.getElementById('login-btn').onclick = () => signInWithPopup(auth, provider);
+            creatorPanel.style.display = "none";
+        }
+    });
+
+    // --- LÓGICA DE POSTAGEM ---
+    document.getElementById('publish-btn').onclick = async () => {
+        const title = document.getElementById('title').value;
+        const desc = document.getElementById('desc').value;
+        const img = document.getElementById('imgUrl').value;
+        const link = document.getElementById('downloadUrl').value;
+
+        if (title && desc) {
+            try {
+                await addDoc(collection(db, "posts"), {
+                    title, desc, img, link,
+                    date: Date.now()
+                });
+                alert("Anúncio publicado com sucesso! 🍓");
+                document.querySelectorAll('input, textarea').forEach(i => i.value = '');
+            } catch (e) { alert("Erro ao publicar: " + e.message); }
+        } else {
+            alert("Preencha pelo menos o título e a descrição!");
+        }
+    };
+
+    // --- CARREGAR FEED ---
+    const q = query(collection(db, "posts"), orderBy("date", "desc"));
+    onSnapshot(q, (snapshot) => {
+        const feed = document.getElementById('feed');
+        feed.innerHTML = "";
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            feed.innerHTML += `
+                <div class="post-card">
+                    <h3>${data.title}</h3>
+                    <p>${data.desc}</p>
+                    ${data.img ? `<img src="${data.img}">` : ''}
+                    ${data.link ? `<br><a href="${data.link}" target="_blank" class="download-btn">📥 Baixar Agora</a>` : ''}
+                </div>
+            `;
+        });
+    });
+</script>
+
+</body>
+</html>
